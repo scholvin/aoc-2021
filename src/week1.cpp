@@ -7,6 +7,8 @@
 #include <list>
 #include <cassert>
 
+#include <boost/algorithm/string.hpp>
+
 #if 0
 
 #include <regex>
@@ -16,7 +18,7 @@
 #include <map>
 #include <set>
 
-#include <boost/algorithm/string.hpp>
+
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/graph/depth_first_search.hpp>
@@ -224,6 +226,140 @@ namespace week1
         assert(co2.size() == 1);
 
         return std::stoull(oxygen.front(), 0, 2) * std::stoull(co2.front(), 0, 2);
+    }
+
+    class Bingo {
+    public:
+        Bingo(const std::vector<std::string>& rows)
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                std::vector<std::string> parts;
+                boost::algorithm::split(parts, rows[i], boost::is_any_of(" "), boost::token_compress_on);
+                for (int j = 0; j < 5; j++)
+                {
+                    m_board[i][j].first = std::stol(parts[j]);
+                    m_board[i][j].second = false;
+                }
+            }
+        }
+
+        // true if this play makes a winner
+        bool play(int num)
+        {
+            bool check = false;
+            for (int i = 0; i < 5; i++)
+            {
+                for (int j = 0; j < 5; j++)
+                {
+                    if (m_board[i][j].first == num)
+                    {
+                        m_board[i][j].second = true;
+                        check = true;
+                        break;
+                    }
+                }
+                if (check) break;
+            }
+
+            if (check)
+            {
+                // check rows and columns
+                for (int i = 0; i < 5; i++)
+                {
+                    if (m_board[i][0].second && m_board[i][1].second && m_board[i][2].second && m_board[i][3].second && m_board[i][4].second)
+                        return true;
+                    if (m_board[0][i].second && m_board[1][i].second && m_board[2][i].second && m_board[3][i].second && m_board[4][i].second)
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        // return the score, which is the sum of all unmarked cells times the number just played
+        long score(int num) const
+        {
+            long sum = 0;
+            for (int i = 0; i < 5; i++)
+            {
+                for (int j = 0; j < 5; j++)
+                {
+                    if (!m_board[i][j].second)
+                    {
+                        sum += m_board[i][j].first;
+                    }
+                }
+            }
+            return sum * num;
+        }
+
+        void print() const
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                for (int j = 0; j < 5; j++)
+                {
+                    std::cout << m_board[i][j].first << (m_board[i][j].second ? "." : "") << " ";
+                }
+                std::cout << std::endl;
+            }
+            std::cout << std::endl;
+        }
+    private:
+        typedef std::pair<int, bool> Cell;
+        Cell m_board[5][5];
+    };
+
+    long day04(int part)
+    {
+        std::ifstream infile("../data/day04.dat");
+        std::string draw;
+        std::getline(infile, draw);
+        std::vector<Bingo> bingos;
+
+        while (infile.peek() != EOF)
+        {
+            std::string line;
+            std::getline(infile, line); // blank first
+            std::vector<std::string> inputs;
+            for (int i = 0; i < 5; i++)
+            {
+                std::getline(infile, line);
+                boost::algorithm::trim(line);
+                inputs.push_back(line);
+            }
+            bingos.push_back(Bingo(inputs));
+        }
+
+        std::vector<std::string> draws;
+        boost::algorithm::split(draws, draw, boost::is_any_of(","));
+        long last = -1;
+        for (auto d: draws)
+        {
+            int p = std::stol(d);
+            auto it = bingos.begin();
+            while (it != bingos.end())
+            {
+                if (it->play(p))
+                {
+                    if (part == 1)
+                    {
+                        return it->score(p);
+                    }
+                    else
+                    {
+                        last = it->score(p);
+                        it = bingos.erase(it);
+                    }
+                } else
+                {
+                    ++it;
+                }
+                // b.print();
+            }
+        }
+
+        return last;
     }
 
 };

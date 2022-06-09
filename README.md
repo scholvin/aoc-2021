@@ -24,7 +24,7 @@ Command line help is available from the executable.
 ```
 mkdir bfast
 cd bfast
-cmake ../src -DCMAKE_BUILD_TYPE=Release
+cmake -DCMAKE_BUILD_TYPE=Release ../src
 make
 ```
 
