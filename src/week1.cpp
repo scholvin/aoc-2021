@@ -310,7 +310,7 @@ namespace week1
         Cell m_board[5][5];
     };
 
-    long day04(int part)
+    long day04(char part)
     {
         std::ifstream infile("../data/day04.dat");
         std::string draw;
@@ -342,7 +342,7 @@ namespace week1
             {
                 if (it->play(p))
                 {
-                    if (part == 1)
+                    if (part == 'a')
                     {
                         return it->score(p);
                     }
@@ -358,8 +358,97 @@ namespace week1
                 // b.print();
             }
         }
-
         return last;
+    }
+
+    long day05(char part)
+    {
+        const int SIZE = 1000; // cheat - I looked at the data
+        uint16_t seafloor[SIZE][SIZE]; // 2MB
+        bzero(seafloor, sizeof(seafloor));
+
+        std::ifstream infile("../data/day05.dat");
+        std::string line;
+        while (std::getline(infile, line))
+        {
+            // these lines are of the format: 822,976 -> 822,117
+            std::vector<std::string> tmp;
+            boost::algorithm::split(tmp, line, boost::is_any_of(" "));
+            std::vector<std::string> p1;
+            boost::algorithm::split(p1, tmp[0], boost::is_any_of(","));
+            std::vector<std::string> p2;
+            boost::algorithm::split(p2, tmp[2], boost::is_any_of(","));
+            int x1 = std::stol(p1[0]);
+            int y1 = std::stol(p1[1]);
+            int x2 = std::stol(p2[0]);
+            int y2 = std::stol(p2[1]);
+
+            int xs = std::min(x1, x2);
+            int xe = std::max(x1, x2);
+            int ys = std::min(y1, y2);
+            int ye = std::max(y1, y2);
+
+            int xd = x1 < x2 ? 1 : -1;
+            int yd = y1 < y2 ? 1 : -1;
+
+            if (x1 == x2)
+            {
+                for (int y = ys; y <= ye; y++)
+                {
+                    seafloor[x1][y]++;
+                }
+            }
+            else if (y1 == y2)
+            {
+                for (int x = xs; x <= xe; x++)
+                {
+                    seafloor[x][y1]++;
+                }
+            }
+            else if (part == 'b')
+            {
+                // std::cout << "diag: " << line << std::endl;
+                // diagonal
+                int y = y1;
+                int x = x1;
+                do {
+                    // std::cout << " " << x << "," << y << std::endl;
+                    seafloor[x][y]++;
+                    y += yd;
+                    x += xd;
+                } while (x - xd != x2);
+            }
+        }
+
+/*
+        // print it out, only practical for smol data
+        for (int y = 0; y < SIZE; y++)
+        {
+            for (int x = 0; x < SIZE; x++)
+            {
+                if (seafloor[x][y] > 0)
+                    std::cout << seafloor[x][y];
+                else
+                    std::cout << ".";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+*/
+
+        long count = 0;
+        for (int x = 0; x < SIZE; x++)
+        {
+            for (int y = 0; y < SIZE; y++)
+            {
+                if (seafloor[x][y] >= 2)
+                {
+                    count++;
+                }
+            }
+        }
+
+        return count;
     }
 
 };
