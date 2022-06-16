@@ -6,6 +6,7 @@
 #include <iostream>
 #include <list>
 #include <cassert>
+#include <cmath>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/tokenizer.hpp>
@@ -489,6 +490,44 @@ namespace week1
             sum += buckets[b];
 
         return sum;
+    }
+
+    long triangle(int n)
+    {
+        return (n * (n + 1)) / 2;
+    }
+
+    long day07(char part)
+    {
+        std::ifstream infile("../data/day07.dat");
+        std::string line;
+        std::getline(infile, line);
+
+        std::vector<int> positions;
+        boost::tokenizer<> tok(line);
+        std::transform(tok.begin(), tok.end(), std::back_inserter(positions), ToInt());
+
+        long min = std::numeric_limits<long>::max();
+        // yes, it's O(n^2)
+        for (size_t i = 0; i < positions.size(); i++)
+        {
+            long moves = 0;
+            for (size_t j = 0; j < positions.size(); j++)
+            {
+                if (part == 'a')
+                {
+                    moves += std::abs(positions[j] - positions[i]);
+                }
+                else
+                {
+                    moves += triangle(std::abs(positions[j] - positions[i]));
+                }
+            }
+            min = std::min(min, moves);
+        }
+
+        return min;
+
     }
 
 };

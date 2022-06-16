@@ -13,6 +13,7 @@ namespace week1
     long day04(char part);
     long day05(char part);
     long day06(int turns);
+    long day07(char part);
 
     const runner::method_map_t method_map =
     {
@@ -28,5 +29,7 @@ namespace week1
         { "5b", std::bind(&day05, 'b') },
         { "6a", std::bind(&day06, 80) },
         { "6b", std::bind(&day06, 256) },
+        { "7a", std::bind(&day07, 'a') },
+        { "7b", std::bind(&day07, 'b') },
     };
 };
