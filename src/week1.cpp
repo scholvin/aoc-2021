@@ -1,4 +1,5 @@
 #include "week1.h"
+#include "util.h"
 
 #include <string>
 #include <vector>
@@ -9,8 +10,6 @@
 #include <cmath>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/tokenizer.hpp>
-#include <boost/lexical_cast.hpp>
 
 #if 0
 
@@ -33,12 +32,7 @@ namespace week1
     long day01a()
     {
         std::vector<long> input;
-        std::ifstream infile("../data/day01.dat");
-        std::string line;
-        while (std::getline(infile, line))
-        {
-            input.push_back(std::stol(line));
-        }
+        readers::read_by_line("../data/day01.dat", input);
 
         long incs = 0;
 
@@ -54,12 +48,7 @@ namespace week1
     long day01b()
     {
         std::vector<long> input;
-        std::ifstream infile("../data/day01.dat");
-        std::string line;
-        while (std::getline(infile, line))
-        {
-            input.push_back(std::stol(line));
-        }
+        readers::read_by_line("../data/day01.dat", input);
 
         long incs = 0;
         long slider = 0;
@@ -139,12 +128,7 @@ namespace week1
     long day03a()
     {
         std::vector<std::string> input;
-        std::ifstream infile("../data/day03.dat");
-        std::string line;
-        while (std::getline(infile, line))
-        {
-            input.push_back(line);
-        }
+        readers::read_by_line("../data/day03.dat", input);
 
         std::string gamma, epsilon;
         for (size_t i = 0; i < input[0].size(); i++)
@@ -164,12 +148,7 @@ namespace week1
     long day03b()
     {
         std::list<std::string> input;
-        std::ifstream infile("../data/day03.dat");
-        std::string line;
-        while (std::getline(infile, line))
-        {
-            input.push_back(line);
-        }
+        readers::read_by_line("../data/day03.dat", input);
 
         auto oxygen = input;
         for (size_t i = 0; i < input.begin()->size(); i++)
@@ -354,11 +333,11 @@ namespace week1
                         last = it->score(p);
                         it = bingos.erase(it);
                     }
-                } else
+                }
+                else
                 {
                     ++it;
                 }
-                // b.print();
             }
         }
         return last;
@@ -367,7 +346,7 @@ namespace week1
     long day05(char part)
     {
         const int SIZE = 1000; // cheat - I looked at the data
-        uint16_t seafloor[SIZE][SIZE]; // 2MB
+        uint16_t seafloor[SIZE][SIZE]; // 2MB, valgrind needs --max-stackframe=2000728
         bzero(seafloor, sizeof(seafloor));
 
         std::ifstream infile("../data/day05.dat");
@@ -420,22 +399,6 @@ namespace week1
             }
         }
 
-/*
-        // print it out, only practical for smol data
-        for (int y = 0; y < SIZE; y++)
-        {
-            for (int x = 0; x < SIZE; x++)
-            {
-                if (seafloor[x][y] > 0)
-                    std::cout << seafloor[x][y];
-                else
-                    std::cout << ".";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-*/
-
         long count = 0;
         for (int x = 0; x < SIZE; x++)
         {
@@ -450,22 +413,12 @@ namespace week1
         return count;
     }
 
-    struct ToInt
-    {
-        int operator()(const std::string& str) { return boost::lexical_cast<int>(str); }
-    };
-
     long day06(int turns)
     {
         const int BUCKETS = 9; // 0 through 8
 
-        std::ifstream infile("../data/day06.dat");
-        std::string line;
-        std::getline(infile, line);
-
         std::vector<int> fish;
-        boost::tokenizer<> tok(line);
-        std::transform(tok.begin(), tok.end(), std::back_inserter(fish), ToInt());
+        readers::read_delimited_line("../data/day06.dat", fish);
 
         long buckets[BUCKETS];
         bzero(buckets, sizeof(buckets));
@@ -499,13 +452,8 @@ namespace week1
 
     long day07(char part)
     {
-        std::ifstream infile("../data/day07.dat");
-        std::string line;
-        std::getline(infile, line);
-
         std::vector<int> positions;
-        boost::tokenizer<> tok(line);
-        std::transform(tok.begin(), tok.end(), std::back_inserter(positions), ToInt());
+        readers::read_delimited_line("../data/day07.dat", positions);
 
         long min = std::numeric_limits<long>::max();
         // yes, it's O(n^2)
