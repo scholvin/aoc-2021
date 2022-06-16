@@ -8,6 +8,8 @@
 #include <cassert>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/tokenizer.hpp>
+#include <boost/lexical_cast.hpp>
 
 #if 0
 
@@ -373,15 +375,12 @@ namespace week1
         {
             // these lines are of the format: 822,976 -> 822,117
             std::vector<std::string> tmp;
-            boost::algorithm::split(tmp, line, boost::is_any_of(" "));
-            std::vector<std::string> p1;
-            boost::algorithm::split(p1, tmp[0], boost::is_any_of(","));
-            std::vector<std::string> p2;
-            boost::algorithm::split(p2, tmp[2], boost::is_any_of(","));
-            int x1 = std::stol(p1[0]);
-            int y1 = std::stol(p1[1]);
-            int x2 = std::stol(p2[0]);
-            int y2 = std::stol(p2[1]);
+            boost::algorithm::split(tmp, line, boost::is_any_of(" ,->"), boost::token_compress_on);
+
+            int x1 = std::stol(tmp[0]);
+            int y1 = std::stol(tmp[1]);
+            int x2 = std::stol(tmp[2]);
+            int y2 = std::stol(tmp[3]);
 
             int xs = std::min(x1, x2);
             int xe = std::max(x1, x2);
@@ -447,8 +446,49 @@ namespace week1
                 }
             }
         }
-
         return count;
+    }
+
+    struct ToInt
+    {
+        int operator()(const std::string& str) { return boost::lexical_cast<int>(str); }
+    };
+
+    long day06(int turns)
+    {
+        const int BUCKETS = 9; // 0 through 8
+
+        std::ifstream infile("../data/day06.dat");
+        std::string line;
+        std::getline(infile, line);
+
+        std::vector<int> fish;
+        boost::tokenizer<> tok(line);
+        std::transform(tok.begin(), tok.end(), std::back_inserter(fish), ToInt());
+
+        long buckets[BUCKETS];
+        bzero(buckets, sizeof(buckets));
+        for (auto f: fish)
+        {
+            buckets[f]++;
+        }
+
+        for (int t = 0; t < turns; t++)
+        {
+            long new_buckets[BUCKETS];
+            for (int b = 0; b <= 7; b++)
+                new_buckets[b] = buckets[b+1];
+            new_buckets[6] += buckets[0];
+            new_buckets[8] = buckets[0];
+            memmove(buckets, new_buckets, sizeof(buckets));
+        }
+
+
+        long sum = 0;
+        for (int b = 0; b < BUCKETS; b++)
+            sum += buckets[b];
+
+        return sum;
     }
 
 };
