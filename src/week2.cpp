@@ -112,6 +112,11 @@ namespace week2
         return sum;
     }
 
+    struct DigitParser
+    {
+        uint8_t operator()(char c) { return c - '0'; }
+    };
+
     long day09(char part)
     {
         // cheated here and looked at the data file to avoid dynamic array shenanigans
@@ -123,22 +128,12 @@ namespace week2
         std::array<std::array<uint8_t, HEIGHT>, WIDTH> seafloor;
         std::vector<coordinate_t> lows;
 
-        std::ifstream infile(FILENAME);
-        std::string line;
-        int x = 0, y = 0;
-        while (std::getline(infile, line))
-        {
-            for (x = 0; x < WIDTH; x++)
-            {
-                seafloor[x][y] = line[x] - '0';
-            }
-            y++;
-        }
+        readers::read_dense_2d_matrix(FILENAME, DigitParser(), seafloor);
 
         long result = 0;
-        for (y = 0; y < HEIGHT; y++)
+        for (int y = 0; y < HEIGHT; y++)
         {
-            for (x = 0; x < WIDTH; x++)
+            for (int x = 0; x < WIDTH; x++)
             {
                 uint8_t left = (x == 0 ? 9 : seafloor[x-1][y]);
                 uint8_t right = (x == WIDTH-1 ? 9 : seafloor[x+1][y]);
@@ -318,5 +313,76 @@ namespace week2
         }
         std::sort(scores.begin(), scores.end());
         return scores[(scores.size())/2];
+    }
+
+    long day11(char part)
+    {
+        const int SIZE = 10;
+        std::array<std::array<uint8_t, SIZE>, SIZE> grid;
+        readers::read_dense_2d_matrix("../data/day11.dat", DigitParser(), grid);
+
+        int steps = 0;
+        long flashes = 0;
+        long last_flashes = 0;
+
+        while (true)
+        {
+            std::array<std::array<bool, SIZE>, SIZE> flashed { false };
+            // first, increment everyone
+            for (int x = 0; x < SIZE; x++)
+            {
+                for (int y = 0; y < SIZE; y++)
+                {
+                    grid[x][y]++;
+                }
+            }
+            // iterate on flash algorithm until it settles (no new flashes)
+            bool done = false;
+            while (!done)
+            {
+                long prev_flashes = flashes;
+                // flash anyone who just turned ten and who hasn't flashed yet
+                for (int x = 0; x < SIZE; x++)
+                {
+                    for (int y = 0; y < SIZE; y++)
+                    {
+                        if (grid[x][y] > 9 && !flashed[x][y])
+                        {
+                            flashes++;
+                            flashed[x][y] = true;
+                            // increment neighbors
+                            for (int xn = x-1; xn <= x+1; xn++)
+                            {
+                                for (int yn = y-1; yn <= y+1; yn++)
+                                {
+                                    if (xn >= 0 && yn >= 0 && xn < SIZE && yn < SIZE)
+                                        grid[xn][yn]++;
+                                }
+                            }
+                        }
+                    }
+                }
+                done = (flashes == prev_flashes);
+            }
+            // reset the ones that flashed
+            for (int x = 0; x < SIZE; x++)
+            {
+                for (int y = 0; y < SIZE; y++)
+                {
+                    if (flashed[x][y])
+                    {
+                        grid[x][y] = 0;
+                    }
+                }
+            }
+            steps++;
+            if (part == 'a' && steps == 100)
+                return flashes;
+            if (part == 'b' && flashes - last_flashes == 100)
+                return steps;
+            last_flashes = flashes;
+        }
+
+        return -1; // never gets here, keep compiler quiet
     }
 };
