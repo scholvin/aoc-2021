@@ -1,7 +1,7 @@
 #include "runner.h"
 #include "week1.h"
-#if 0
 #include "week2.h"
+#if 0
 #include "week3.h"
 #include "day20.h"
 #include "week4.h"
@@ -14,8 +14,8 @@ int main(int argc, char** argv)
     using namespace std;
     runner run;
     run.add(week1::method_map);
-#if 0
     run.add(week2::method_map);
+#if 0
     run.add(week3::method_map);
     run.add(day20::method_map);
     run.add(week4::method_map);

@@ -11,22 +11,6 @@
 
 #include <boost/algorithm/string.hpp>
 
-#if 0
-
-#include <regex>
-#include <algorithm>
-#include <utility>
-#include <functional>
-#include <map>
-#include <set>
-
-
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/breadth_first_search.hpp>
-#include <boost/graph/depth_first_search.hpp>
-
-#endif
-
 namespace week1
 {
     long day01a()
