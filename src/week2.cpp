@@ -5,6 +5,7 @@
 #include <vector>
 #include <unordered_set>
 #include <set>
+#include <stack>
 #include <iostream>
 
 namespace week2
@@ -113,15 +114,11 @@ namespace week2
 
     long day09(char part)
     {
-#if 0
-        const int WIDTH = 10;
-        const int HEIGHT = 5;
-        const std::string FILENAME = "../data/day09-smol.dat";
-#else
+        // cheated here and looked at the data file to avoid dynamic array shenanigans
         const int WIDTH = 100;
         const int HEIGHT = 100;
         const std::string FILENAME = "../data/day09.dat";
-#endif
+
         typedef std::pair<uint8_t, uint8_t> coordinate_t;
         std::array<std::array<uint8_t, HEIGHT>, WIDTH> seafloor;
         std::vector<coordinate_t> lows;
@@ -218,5 +215,108 @@ namespace week2
         }
 
         return result;
+    }
+
+    long day10a()
+    {
+        std::vector<std::string> lines;
+        readers::read_by_line("../data/day10.dat", lines);
+
+        long sum = 0;
+        for (auto line: lines)
+        {
+            std::stack<char> stack;
+            for (auto c: line)
+            {
+                if (c == '(' || c == '[' || c == '{' || c == '<')
+                {
+                    stack.push(c);
+                }
+                else
+                {
+                    int points = 0;
+                    char t = stack.top();
+                    stack.pop();
+                    if (c == ')' && t != '(')
+                        points = 3;
+                    else if (c == ']' && t != '[')
+                        points = 57;
+                    else if (c == '}' && t != '{')
+                        points = 1197;
+                    else if (c == '>' && t != '<')
+                        points = 25137;
+                    if (points > 0)
+                    {
+                        sum += points;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return sum;
+    }
+
+    long day10b()
+    {
+        std::vector<std::string> lines;
+        readers::read_by_line("../data/day10.dat", lines);
+        std::vector<long> scores;
+
+        for (auto line: lines)
+        {
+            std::stack<char> stack;
+            bool valid = true;
+            for (auto c: line)
+            {
+                if (c == '(' || c == '[' || c == '{' || c == '<')
+                {
+                    stack.push(c);
+                }
+                else
+                {
+                    char t = stack.top();
+                    stack.pop();
+                    if ((c == ')' && t != '(') || (c == ']' && t != '[') ||
+                        (c == '}' && t != '{') || (c == '>' && t != '<'))
+                    {
+                        valid = false;
+                        break;
+                    }
+                }
+            }
+            if (!valid)
+            {
+                continue;
+            }
+
+            std::string completion;
+            while (!stack.empty())
+            {
+                switch (stack.top())
+                {
+                    case '(': completion += ")"; break;
+                    case '[': completion += "]"; break;
+                    case '{': completion += "}"; break;
+                    case '<': completion += ">"; break;
+                }
+                stack.pop();
+            }
+            long score = 0;
+            for (auto c: completion)
+            {
+                score *= 5;
+                switch (c)
+                {
+                    case ')': score += 1; break;
+                    case ']': score += 2; break;
+                    case '}': score += 3; break;
+                    case '>': score += 4; break;
+                }
+            }
+            scores.push_back(score);
+        }
+        std::sort(scores.begin(), scores.end());
+        return scores[(scores.size())/2];
     }
 };
