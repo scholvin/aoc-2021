@@ -8,6 +8,9 @@
 #include <stack>
 #include <iostream>
 
+#include <boost/graph/adjacency_list.hpp>
+#include <boost/algorithm/string.hpp>
+
 namespace week2
 {
     struct Sequence
@@ -356,7 +359,9 @@ namespace week2
                                 for (int yn = y-1; yn <= y+1; yn++)
                                 {
                                     if (xn >= 0 && yn >= 0 && xn < SIZE && yn < SIZE)
+                                    {
                                         grid[xn][yn]++;
+                                    }
                                 }
                             }
                         }
@@ -382,7 +387,114 @@ namespace week2
                 return steps;
             last_flashes = flashes;
         }
+    }
 
-        return -1; // never gets here, keep compiler quiet
+    struct vertex_prop_t { std::string name; };
+    using graph_t = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, vertex_prop_t>;
+    using vertex_t = boost::graph_traits<graph_t>::vertex_descriptor;
+    const std::string START = "start";
+    const std::string END = "end";
+
+    // recursive traveler (DFS-ish) for day12a
+    long travel_a(const graph_t& graph, const vertex_t present, std::list<vertex_t> small_caves_seen)
+    {
+        long count = 0;
+        if (graph[present].name == END)
+        {
+            return 1;
+        }
+        if (graph[present].name[0] >= 'a' && graph[present].name[0] <= 'z')
+        {
+            small_caves_seen.push_back(present);
+        }
+        auto ep = boost::out_edges(present, graph);
+        for (auto edge_it = ep.first; edge_it != ep.second; edge_it++)
+        {
+            auto dest = boost::target(*edge_it, graph);
+            if (std::find(small_caves_seen.begin(), small_caves_seen.end(), dest) == small_caves_seen.end())
+            {
+                count += travel_a(graph, dest, small_caves_seen);
+            }
+        }
+        return count;
+    }
+
+    long travel_b(const graph_t& graph, const vertex_t present, std::list<vertex_t> small_caves_seen, std::list<vertex_t> small_caves_seen_twice)
+    {
+        long count = 0;
+        if (graph[present].name == END)
+        {
+            return 1;
+        }
+        if (graph[present].name[0] >= 'a' && graph[present].name[0] <= 'z')
+        {
+            if (std::find(small_caves_seen.begin(), small_caves_seen.end(), present) != small_caves_seen.end())
+            {
+                small_caves_seen_twice.push_back(present);
+            }
+            else
+            {
+                small_caves_seen.push_back(present);
+            }
+        }
+        auto ep = boost::out_edges(present, graph);
+        for (auto edge_it = ep.first; edge_it != ep.second; edge_it++)
+        {
+            auto dest = boost::target(*edge_it, graph);
+            if (graph[dest].name == START)
+            {
+                // can't use the start node twice
+                continue;
+            }
+            bool in_small = std::find(small_caves_seen.begin(), small_caves_seen.end(), dest) != small_caves_seen.end();
+            if (!in_small || (in_small && small_caves_seen_twice.size() == 0))
+            {
+                count += travel_b(graph, dest, small_caves_seen, small_caves_seen_twice);
+            }
+        }
+        return count;
+    }
+
+    // got some help here: https://www.jasoncoelho.com/2021/12/passage-pathing-advent-of-code-2021-day.html
+    long day12(char part)
+    {
+         // this will never not suck, the need to manage your own map of names to vertices when building a boost::graph
+        std::map<std::string, vertex_t> vmap;
+        graph_t graph;
+
+        std::ifstream infile("../data/day12.dat");
+        std::string line;
+        while (std::getline(infile, line))
+        {
+            std::vector<std::string> vertices;
+            boost::algorithm::split(vertices, line, boost::is_any_of("-"));
+
+            auto v = vmap.find(vertices[0]);
+            if (v == vmap.end())
+            {
+                auto v0 = boost::add_vertex(vertex_prop_t { vertices[0]}, graph);
+                vmap[vertices[0]] = v0;
+            }
+            v = vmap.find(vertices[1]);
+            if (v == vmap.end())
+            {
+                auto v1 = boost::add_vertex(vertex_prop_t { vertices[1]}, graph);
+                vmap[vertices[1]] = v1;
+            }
+            boost::add_edge(vmap[vertices[0]], vmap[vertices[1]], graph);
+        }
+
+        vertex_t start = vmap.find(START)->second;
+        std::list<vertex_t> small_caves_seen;
+
+        if (part == 'a')
+        {
+            return travel_a(graph, start, small_caves_seen);
+        }
+        else
+        {
+            std::list<vertex_t> small_caves_seen_twice;
+            return travel_b(graph, start, small_caves_seen, small_caves_seen_twice);
+        }
     }
 };
