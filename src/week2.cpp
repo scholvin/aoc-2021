@@ -419,6 +419,7 @@ namespace week2
         return count;
     }
 
+    // recursive traveler (DFS-ish) for day12b
     long travel_b(const graph_t& graph, const vertex_t present, std::list<vertex_t> small_caves_seen, std::list<vertex_t> small_caves_seen_twice)
     {
         long count = 0;
@@ -497,4 +498,127 @@ namespace week2
             return travel_b(graph, start, small_caves_seen, small_caves_seen_twice);
         }
     }
+
+    long day13(char part)
+    {
+#if 0
+        const std::string FILENAME = "../data/day13-smol.dat";
+        const int WIDTH = 11;
+        const int HEIGHT = 15;
+#else
+        const std::string FILENAME = "../data/day13.dat";
+        const int WIDTH = 1311;
+        const int HEIGHT = 894;
+#endif
+        typedef std::array<std::array<bool, HEIGHT>, WIDTH> grid_t;
+        grid_t grid {false};
+        std::ifstream infile(FILENAME);
+        std::string line;
+        while (true)
+        {
+            std::getline(infile, line);
+            if (line.size() == 0)
+            {
+                break;
+            }
+            size_t comma = line.find(',');
+            int x = std::stol(line.substr(0, comma));
+            int y = std::stol(line.substr(comma+1));
+            grid[x][y] = true;
+        }
+
+        int width = WIDTH;
+        int height = HEIGHT;
+
+#ifndef NDEBUG
+        auto debug = [&]() {
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    std::cout << (grid[x][y] ? '#' : '.');
+                }
+                std::cout << std::endl;
+            }
+        };
+#endif
+
+        while (true)
+        {
+            std::getline(infile, line);
+            if (infile.eof())
+                break;
+
+            grid_t next { false };
+            size_t equal = line.find('=');
+            int val = std::stol(line.substr(equal+1));
+            if (line[equal-1] == 'x')
+            {
+                // fold left - populate left part first
+                for (int x = 0; x < val; x++)
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        next[x][y] = grid[x][y];
+                    }
+                }
+                // now flip right over left
+                int nx = val - 1;
+                for (int x = val + 1; x < width; x++, nx--)
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        next[nx][y] |= grid[x][y];
+                    }
+                }
+                width = val;
+            }
+            else
+            {
+                // fold up - populate top part first
+                for (int y = 0; y < val; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        next[x][y] = grid[x][y];
+                    }
+                }
+                // now flip bottom to top
+                int ny = val - 1;
+                for (int y = val + 1; y < height; y++, ny--)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        next[x][ny] |= grid[x][y];
+                    }
+                }
+                height = val;
+            }
+            grid = next;
+            if (part == 'a')
+            {
+                break;
+            }
+        }
+
+        long count = 0;
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (grid[x][y])
+                {
+                    count++;
+                }
+            }
+        }
+#ifndef NDEBUG
+        if (part == 'b')
+        {
+            debug(); // lame!
+        }
+#endif
+        return count;
+    }
+
 };
