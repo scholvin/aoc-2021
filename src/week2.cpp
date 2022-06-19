@@ -501,15 +501,11 @@ namespace week2
 
     long day13(char part)
     {
-#if 0
-        const std::string FILENAME = "../data/day13-smol.dat";
-        const int WIDTH = 11;
-        const int HEIGHT = 15;
-#else
         const std::string FILENAME = "../data/day13.dat";
+        // cheats, based on looking at the file
         const int WIDTH = 1311;
         const int HEIGHT = 894;
-#endif
+
         typedef std::array<std::array<bool, HEIGHT>, WIDTH> grid_t;
         grid_t grid {false};
         std::ifstream infile(FILENAME);
@@ -615,10 +611,95 @@ namespace week2
 #ifndef NDEBUG
         if (part == 'b')
         {
-            debug(); // lame!
+            debug(); // lame! output has to be read as alpha characters
         }
 #endif
         return count;
+    }
+
+    long day14(int steps)
+    {
+        /*
+            count pairs
+            break the polymer into a series of pairs (map<string, long>)
+            NNCB -> NN NC CB
+            apply rules
+              NN -> NC CN
+              NC -> NB CB
+              CB -> CH HB
+            now we have NC CN NB CB CH HB
+        */
+
+        typedef std::map<std::string, long> polymer_t; // counts pairs
+        polymer_t polymer;
+
+        // this is how we manage the pair counts
+        auto incr_pair = [](const std::string& pair, polymer_t& poly, long count)
+        {
+            auto it = poly.find(pair);
+            if (it == poly.end())
+                poly[pair] = count;
+            else
+                it->second += count;
+        };
+
+        std::ifstream infile("../data/day14.dat");
+        std::string line;
+        std::getline(infile, line);
+
+        // parse into initial pairs
+        for (size_t c = 0; c < line.size() - 1; c++)
+        {
+            incr_pair(line.substr(c, 2), polymer, 1);
+        }
+
+        char final = line[line.size()-1];
+
+        std::getline(infile, line); // throw away blank line
+
+        // build the rules map
+        std::map<std::string, std::string> rules;
+        while (std::getline(infile, line))
+        {
+            std::vector<std::string> tmp;
+            boost::algorithm::split(tmp, line, boost::is_any_of(" ,->"), boost::token_compress_on);
+            rules[tmp[0]] = tmp[1];
+        }
+
+        // keep a next generation map - probably some cute way to do this in one, but they're not
+        // too huge, so a copy doesn't kill us
+        for (int i = 0; i < steps; i++)
+        {
+            polymer_t next;
+            for (auto p: polymer)
+            {
+                std::string left = p.first[0] + rules[p.first];
+                std::string right = rules[p.first] + p.first[1];
+                incr_pair(left, next, p.second);
+                incr_pair(right, next, p.second);
+            }
+            polymer = next;
+        }
+
+        // count the first character in each pair
+        std::array<long, 26> counts{ 0 };
+        for (auto p: polymer)
+        {
+            counts[p.first[0] - 'A'] += p.second;
+        }
+        // one more for the end of the polymer
+        counts[final-'A']++;
+
+        // find the largest and smallest (excluding 0)
+        long min = std::numeric_limits<long>::max();
+        long max = 0;
+        for (auto c: counts)
+        {
+            if (c > max) max = c;
+            if (c < min && c > 0) min = c;
+        }
+
+        return max - min;
     }
 
 };
