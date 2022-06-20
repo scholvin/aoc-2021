@@ -115,11 +115,6 @@ namespace week2
         return sum;
     }
 
-    struct DigitParser
-    {
-        uint8_t operator()(char c) { return c - '0'; }
-    };
-
     long day09(char part)
     {
         // cheated here and looked at the data file to avoid dynamic array shenanigans
@@ -131,7 +126,7 @@ namespace week2
         std::array<std::array<uint8_t, HEIGHT>, WIDTH> seafloor;
         std::vector<coordinate_t> lows;
 
-        readers::read_dense_2d_matrix(FILENAME, DigitParser(), seafloor);
+        readers::read_dense_2d_matrix(FILENAME, readers::digit_parser(), seafloor);
 
         long result = 0;
         for (int y = 0; y < HEIGHT; y++)
@@ -322,7 +317,7 @@ namespace week2
     {
         const int SIZE = 10;
         std::array<std::array<uint8_t, SIZE>, SIZE> grid;
-        readers::read_dense_2d_matrix("../data/day11.dat", DigitParser(), grid);
+        readers::read_dense_2d_matrix("../data/day11.dat", readers::digit_parser(), grid);
 
         int steps = 0;
         long flashes = 0;

@@ -33,7 +33,7 @@ struct readers
     }
 
     template <typename T>
-    struct Caster
+    struct lexi_caster
     {
         int operator()(const std::string& str) { return boost::lexical_cast<T>(str); }
     };
@@ -47,8 +47,13 @@ struct readers
         std::getline(infile, line);
 
         boost::tokenizer<> tokens(line);
-        std::transform(tokens.begin(), tokens.end(), std::back_inserter(result), Caster<typename T::value_type>());
+        std::transform(tokens.begin(), tokens.end(), std::back_inserter(result), lexi_caster<typename T::value_type>());
     }
+
+    struct digit_parser
+    {
+        uint8_t operator()(char c) { return c - '0'; }
+    };
 
     // this is for 2-dimensional character matrices
     template <typename T, typename F>
