@@ -42,7 +42,6 @@ namespace week3
     struct edge_prop_t { int weight; };
     using graph_t = boost::adjacency_list<boost::listS, boost::vecS, boost::directedS, vertex_prop_t, edge_prop_t>;
     using vertex_t = boost::graph_traits<graph_t>::vertex_descriptor;
-    typedef std::unordered_map<coordinate_t, vertex_t, coordinate_hash> vertex_map_t;
 
     // Euclidean distance heuristic
     template <class Graph, class CostType>
@@ -57,7 +56,6 @@ namespace week3
             auto gc = m_graph[m_goal].coordinates;
             CostType dx = uc.x - gc.x;
             CostType dy = uc.y - gc.y;
-            //return (::sqrt(dx * dx + dy * dy));
             return ::abs(dx + dy);
         }
     private:
@@ -86,7 +84,7 @@ namespace week3
     };
 
     template <int SIZE>
-    void populate_graph(const std::array<std::array<uint8_t, SIZE>, SIZE>& grid, graph_t& graph, vertex_map_t& vmap)
+    void populate_graph(const std::array<std::array<uint8_t, SIZE>, SIZE>& grid, graph_t& graph, std::array<std::array<vertex_t, SIZE>, SIZE>& vmap)
     {
          /* The grid represents the edge weight *into* that node.
             For example:
@@ -100,7 +98,6 @@ namespace week3
             identifiers will be a tuple of the {x,y} location (coordinate_t).
         */
 
-        vmap.reserve(SIZE*SIZE);
         graph.m_vertices.reserve(SIZE*SIZE);
 
         // the usual stupid mapping problem - start with creating/inserting all the vertices
@@ -108,11 +105,9 @@ namespace week3
         {
             for (int y = 0; y < SIZE; y++)
             {
-                vmap[{x,y}] = boost::add_vertex(vertex_prop_t{x,y}, graph);
+                vmap[x][y] = boost::add_vertex(vertex_prop_t{x,y}, graph);
             }
         }
-
-        std::cout << tstamp() << " built vmap " << boost::num_vertices(graph) << std::endl;
 
         // for neighbors
         // it only ever goes to the right and down; no need to consider all four neighbors - not sure why this is
@@ -130,14 +125,11 @@ namespace week3
                     {
                         // xn, yn is a neighbor of x,y and it's in the graph
                         // there are two edges, one in each direction, and the weight is the grid value at the destination
-                        boost::add_edge(vmap[{x,y}], vmap[{xn,yn}], edge_prop_t{grid[xn][yn]}, graph);
-                        //boost::add_edge(vmap[{xn,yn}], vmap[{x,y}], edge_prop_t{grid[x][y]}, graph);
+                        boost::add_edge(vmap[x][y], vmap[xn][yn], edge_prop_t{grid[xn][yn]}, graph);
                     }
                 }
             }
         }
-        std::cout << tstamp() << " added edges " << boost::num_edges(graph) << std::endl
-                  << " buckets " << vmap.bucket_count() << std::endl;
     }
 
     long day15a()
@@ -145,31 +137,31 @@ namespace week3
 #if 0
         const int SIZE = 10;
         const std::string FILENAME = "../data/day15-smol.dat";
-        const int SANE = 6;
 #else
         const int SIZE = 100;
         const std::string FILENAME = "../data/day15.dat";
-        const int SANE = 7;
 #endif
 
         std::array<std::array<uint8_t, SIZE>, SIZE> grid;
         readers::read_dense_2d_matrix(FILENAME, readers::digit_parser(), grid);
 
         graph_t graph;
-        vertex_map_t vmap;
+        std::array<std::array<vertex_t, SIZE>, SIZE> vmap;
         populate_graph<SIZE>(grid, graph, vmap);
 
-        // sanity check
-        auto x = boost::edge(vmap[{1,0}], vmap[{2,0}], graph);
-        assert(x.second && graph[x.first].weight == SANE);
+#if 0
+        // sanity check on the smol data
+        auto x = boost::edge(vmap[1][0], vmap[2][0], graph);
+        assert(x.second && graph[x.first].weight == 6);
+#endif
 
         std::vector<int> distances(boost::num_vertices(graph));
-        vertex_t start = vmap[{0, 0}];
+        vertex_t start = vmap[0][0];
         boost::dijkstra_shortest_paths(graph, start,
                                        boost::weight_map(boost::get(&edge_prop_t::weight, graph))
                                             .distance_map(boost::make_iterator_property_map(distances.begin(),
                                                           boost::get(boost::vertex_index, graph))));
-        vertex_t finish = vmap[{SIZE-1,SIZE-1}];
+        vertex_t finish = vmap[SIZE-1][SIZE-1];
         return distances[finish];
     }
 
@@ -189,9 +181,6 @@ namespace week3
         readers::read_dense_2d_matrix(FILENAME, readers::digit_parser(), little_grid);
 
         std::array<std::array<uint8_t, SIZE>, SIZE> grid { 0 };
-
-        std::cout << tstamp() << " read it" << std::endl;
-
         // i,j is the big grid (5x5) of the smaller (GSIZE x GSIZE) grids
         // copy them, increasing values as we go right and down (weird mod 9)
         for (int i = 0; i < MULT; i++)
@@ -212,37 +201,22 @@ namespace week3
             }
         }
 
-        std::cout << tstamp() << " grew it" << std::endl;
-#if 0
-        for (int y = 0; y < SIZE; y++)
-        {
-            for (int x = 0; x < SIZE; x++)
-            {
-                std::cout << static_cast<int>(grid[x][y]);
-            }
-            std::cout << std::endl;
-        }
-#endif
         graph_t graph;
-        vertex_map_t vmap;
+        std::array<std::array<vertex_t, SIZE>, SIZE> vmap;
         populate_graph<SIZE>(grid, graph, vmap);
-        vertex_t start = vmap[{0, 0}];
-        vertex_t finish = vmap[{SIZE-1, SIZE-1}];
+        vertex_t start = vmap[0][0];
+        vertex_t finish = vmap[SIZE-1][SIZE-1];
         std::vector<int> distances(boost::num_vertices(graph));
 
-        std::cout << tstamp() << " populated it" << std::endl;
-
-#if 1
-        // Dijkstra takes 20 seconds in the optim build, 160 seconds in the debug
+#if 0
+        // this is just a little bit slower
         boost::dijkstra_shortest_paths(graph, start,
                                        boost::weight_map(boost::get(&edge_prop_t::weight, graph))
                                             .distance_map(boost::make_iterator_property_map(distances.begin(),
                                                           boost::get(boost::vertex_index, graph))));
-
 #else
         try
         {
-            std::cout << tstamp() << " starting search" << std::endl;
             boost::astar_search_tree(graph, start,
                                      distance_heuristic<graph_t, double>(graph, finish),
                                      boost::weight_map(boost::get(&edge_prop_t::weight, graph))
@@ -250,12 +224,9 @@ namespace week3
                                                           boost::get(boost::vertex_index, graph)))
                                             .visitor(astar_goal_visitor<vertex_t>(finish)));
         }
-        catch (found_goal fg)
-        {
-            std::cout << tstamp() << " finished search" << std::endl;
-        }
+        catch (found_goal fg) { }
 #endif
-        return distances[finish];
 
+        return distances[finish];
     }
 };
