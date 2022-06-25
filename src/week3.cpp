@@ -229,4 +229,77 @@ namespace week3
 
         return distances[finish];
     }
+
+    std::string hex_to_binary(const std::string &s)
+    {
+        std::string out;
+        for (auto i: s)
+        {
+            uint8_t n;
+            if (i <= '9' and i >= '0')
+                n = i - '0';
+            else
+                n = 10 + i - 'A';
+            for (int8_t j = 3; j >= 0; --j)
+                out.push_back((n & (1<<j)) ? '1' : '0');
+        }
+        return out;
+    }
+
+    long day16(char part)
+    {
+        std::ifstream infile("../data/day16.dat");
+        std::string line;
+        // line = "620080001611562C8802118E34"; // 12
+        // line = "8A004A801A8002F478"; // 16
+        // line = "C0015000016115A2E0802F182340"; // 23
+        // line = "A0016C880162017C3686B18A3D4780"; // 31
+        std::getline(infile, line);
+        std::string binary = hex_to_binary(line);
+
+        enum class Types : int { SUM, PRODUCT, MINIMUM, MAXIMUM, LITERAL, GREATER, LESS, EQUAL };
+        enum class Modes : int { BITS, SUBPACKETS };
+
+        long sum = 0; // part a
+        for (size_t i = 0; i < binary.size() - 8; )
+        {
+            int version = std::stoi(binary.substr(i, 3), nullptr, 2); i += 3;
+
+            if (part == 'a')
+                sum += version;
+
+            Types type{ std::stoi(binary.substr(i, 3), nullptr, 2) }; i += 3;
+            if (type == Types::LITERAL)
+            {
+                int literal;
+                while (binary[i++] == '1')
+                {
+                    literal = std::stoi(binary.substr(i, 4), nullptr, 2); i += 4;
+                    std::cout << "literal: " << literal << std::endl;
+                }
+                literal = std::stoi(binary.substr(i, 4), nullptr, 2); i += 4;
+                std::cout << "literal: " << literal << std::endl;
+            }
+            else // operator
+            {
+                int length;
+                Modes mode;
+                if (binary[i++] == '0')
+                {
+                    // next 15 bits is a number representing total length in bits of subpackets herein
+                    length = std::stoi(binary.substr(i, 15), nullptr, 2); i += 15;
+                    mode = Modes::BITS;
+                }
+                else
+                {
+                    // next 11 bits is a number representing total number of subpackets herein
+                    length = std::stoi(binary.substr(i, 11), nullptr, 2); i += 11;
+                    mode = Modes::SUBPACKETS;
+                }
+                std::cout << "operator: " << (int)type << " mode: " << (mode == Modes::BITS ? "B" : "S") << " length: " << length << std::endl;
+            }
+        }
+
+        return sum;
+    }
 };
