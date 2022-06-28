@@ -246,7 +246,10 @@ namespace week3
         return out;
     }
 
-    long day16(char part)
+    enum class Types : int { SUM, PRODUCT, MINIMUM, MAXIMUM, LITERAL, GREATER, LESS, EQUAL };
+    enum class Modes : int { BITS, SUBPACKETS };
+
+    long day16a()
     {
         std::ifstream infile("../data/day16.dat");
         std::string line;
@@ -257,49 +260,86 @@ namespace week3
         std::getline(infile, line);
         std::string binary = hex_to_binary(line);
 
-        enum class Types : int { SUM, PRODUCT, MINIMUM, MAXIMUM, LITERAL, GREATER, LESS, EQUAL };
-        enum class Modes : int { BITS, SUBPACKETS };
-
-        long sum = 0; // part a
+        long sum = 0;
         for (size_t i = 0; i < binary.size() - 8; )
         {
             int version = std::stoi(binary.substr(i, 3), nullptr, 2); i += 3;
+            sum += version;
 
-            if (part == 'a')
-                sum += version;
-
-            Types type{ std::stoi(binary.substr(i, 3), nullptr, 2) }; i += 3;
+            Types type { std::stoi(binary.substr(i, 3), nullptr, 2) }; i += 3;
             if (type == Types::LITERAL)
             {
                 int literal;
                 while (binary[i++] == '1')
                 {
                     literal = std::stoi(binary.substr(i, 4), nullptr, 2); i += 4;
-                    std::cout << "literal: " << literal << std::endl;
                 }
                 literal = std::stoi(binary.substr(i, 4), nullptr, 2); i += 4;
-                std::cout << "literal: " << literal << std::endl;
+                (void)literal; // quiet compiler
             }
             else // operator
             {
                 int length;
-                Modes mode;
                 if (binary[i++] == '0')
                 {
                     // next 15 bits is a number representing total length in bits of subpackets herein
                     length = std::stoi(binary.substr(i, 15), nullptr, 2); i += 15;
-                    mode = Modes::BITS;
                 }
                 else
                 {
                     // next 11 bits is a number representing total number of subpackets herein
                     length = std::stoi(binary.substr(i, 11), nullptr, 2); i += 11;
-                    mode = Modes::SUBPACKETS;
                 }
-                std::cout << "operator: " << (int)type << " mode: " << (mode == Modes::BITS ? "B" : "S") << " length: " << length << std::endl;
+                (void)length; // quiet compiler
             }
         }
 
         return sum;
+    }
+
+    long day17(char part)
+    {
+        /* input data, gonna just use it instead of read it
+              taget area: x=88..125, y=-157..-103
+        */
+        const int XMIN = 88;
+        const int XMAX = 125;
+        const int YMAX = -103;
+        const int YMIN = -157;
+        const int VMAX = 400; // max velocity, some trial and error here
+
+        long ymax = 0; // part a
+        std::unordered_set<coordinate_t, coordinate_hash> coordinates;
+
+        for (int xv0 = 1; xv0 < VMAX; xv0++)
+        {
+            for (int yv0 = YMIN; yv0 < VMAX; yv0++)
+            {
+                int xv = xv0, yv = yv0, x = 0, y = 0, ylocal = 0;
+                while (x <= XMAX && y >= YMIN)
+                {
+                    if (x >= XMIN && x <= XMAX && y >= YMIN && y <= YMAX)
+                    {
+                        if (part == 'a')
+                        {
+                            if (ylocal > ymax)
+                                ymax = ylocal;
+                        }
+                        else
+                        {
+                            coordinates.insert( {xv0, yv0} );
+                        }
+                    }
+                    x += xv;
+                    y += yv;
+                    if (xv > 0)
+                        xv--;
+                    yv--;
+                    if (y > ylocal)
+                        ylocal = y;
+                }
+            }
+        }
+        return part == 'a' ? ymax : coordinates.size();
     }
 };
